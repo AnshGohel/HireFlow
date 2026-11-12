@@ -44,33 +44,26 @@ export const login = catchAsyncErrors(async (req, res, next) => {
 });
 
 export const logout = catchAsyncErrors(async (req, res, next) => {
+  const isProduction = process.env.NODE_ENV === "production";
   res
-    .status(201)
+    .status(200)
     .cookie("token", "", {
       httpOnly: true,
       expires: new Date(0),
       path: "/",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
     })
     .json({
       success: true,
-      message: "Logged Out Successfully !",
+      message: "User Logged Out Sucessfully !",
     });
 });
 
-
 export const getUser = catchAsyncErrors((req, res, next) => {
   const user = req.user;
-  // Sanitize user data to remove sensitive fields
-  const sanitizedUser = {
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    role: user.role,
-  };
-
   res.status(200).json({
     success: true,
-    user: sanitizedUser,
+    user,
   });
 });
