@@ -1,17 +1,42 @@
-import mongoose from "mongoose"; //just mongoose import!
-import dotenv from "dotenv"
-dotenv.config()
+import mongoose from "mongoose";
 
-//Database connection here!
- const dbConnection  = ()=>{
-    mongoose.connect(process.env.DB_URL,{
-       dbName: "Job_Portal"
+let cached = global.mongoose;
 
-    }).then(()=>{ //agar connect ho jaye toh!
-       console.log("MongoDB Connected Sucessfully !")
-    }).catch((error)=>{
-        console.log(`Failed to connect ${error}`) //warna error de do console me!
-    })
-    
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
+
+export const dbConnection = async () => {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      dbName: "Job_Portal",
+      bufferCommands: false,
+    };
+
+    cached.promise = mongoose
+      .connect(process.env.DB_URL, opts)
+      .then((mongooseInstance) => {
+        console.log("MongoDB Connected Sucessfully !");
+        return mongooseInstance;
+      })
+      .catch((error) => {
+        console.log(`Failed to connect ${error}`);
+        throw error;
+      });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+};
+
 export default dbConnection;
